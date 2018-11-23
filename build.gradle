@@ -5,7 +5,7 @@ plugins {
 }
 
 
-mainClassName = 'com.theOnlyHorst.EpicDiscordBot'
+mainClassName = 'com.theOnlyHorst.EpicDiscordBot.EpicDiscordBot'
 
 group 'com.theOnlyHorst'
 version '1.0'
