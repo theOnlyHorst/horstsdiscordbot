@@ -5,7 +5,7 @@ plugins {
 }
 
 
-mainClassName = 'com.example.jda.Bot'
+mainClassName = 'com.theOnlyHorst.EpicDiscordBot'
 
 group 'com.theOnlyHorst'
 version '1.0'
