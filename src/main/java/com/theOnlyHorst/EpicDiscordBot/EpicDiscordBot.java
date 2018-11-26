@@ -24,7 +24,8 @@ public class EpicDiscordBot extends ListenerAdapter {
         Message message = event.getMessage();
         String content = message.getRawContent();
 
-        
+        long id = event.getGuild().getIdLong();
+
 
 
     }
