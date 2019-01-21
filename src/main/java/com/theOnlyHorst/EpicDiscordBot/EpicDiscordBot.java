@@ -1,5 +1,6 @@
 package com.theOnlyHorst.EpicDiscordBot;
 
+import com.theOnlyHorst.EpicDiscordBot.Controller.CommandParser;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.entities.Message;
@@ -23,9 +24,11 @@ public class EpicDiscordBot extends ListenerAdapter {
         if (event.getAuthor().isBot()) return;
         Message message = event.getMessage();
         String content = message.getRawContent();
-
         long id = event.getGuild().getIdLong();
-
+        MessageChannel ch = event.getChannel();
+        String returnMsg = CommandParser.parseCommand(id,content);
+        if(returnMsg!=null && !returnMsg.isEmpty())
+        ch.sendMessage(returnMsg).queue();
 
 
     }
