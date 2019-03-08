@@ -2,14 +2,12 @@ package com.theOnlyHorst.EpicDiscordBot.Model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 @AllArgsConstructor
 @Getter
-public class User {
+public class Script {
 
     private Long id;
-    @Setter
-    private String name;
-
+    private User creator;
+    private String fileName;
 }

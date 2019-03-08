@@ -25,9 +25,6 @@ public class CommandParser {
             CommandParser.class.getClassLoader().getResource("Commands/"+command+".json");
 
 
-
-
-
         }
 
         return null;
