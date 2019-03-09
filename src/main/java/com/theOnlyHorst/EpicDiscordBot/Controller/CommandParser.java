@@ -7,8 +7,6 @@ import com.theOnlyHorst.EpicDiscordBot.Model.Command;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
-import org.graalvm.compiler.lir.LIRInstruction;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;

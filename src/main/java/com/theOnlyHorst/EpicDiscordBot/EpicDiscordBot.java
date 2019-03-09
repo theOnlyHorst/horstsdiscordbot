@@ -2,6 +2,7 @@ package com.theOnlyHorst.EpicDiscordBot;
 
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandParser;
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandProcessor;
+import net.dv8tion.jda.bot.JDABot;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
@@ -18,6 +19,8 @@ public class EpicDiscordBot extends ListenerAdapter {
 
     public static File dataDirectory;
 
+    public static JDA mainBot;
+
     public static void main(String[] args) throws LoginException, RateLimitedException {
 
 
@@ -31,7 +34,7 @@ public class EpicDiscordBot extends ListenerAdapter {
 
 
         CommandProcessor.loadHookMethods();
-        new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
+        mainBot = new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
 
     }
 
