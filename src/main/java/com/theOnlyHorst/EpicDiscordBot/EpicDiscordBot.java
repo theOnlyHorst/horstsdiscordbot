@@ -1,6 +1,7 @@
 package com.theOnlyHorst.EpicDiscordBot;
 
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandParser;
+import com.theOnlyHorst.EpicDiscordBot.Controller.CommandProcessor;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
@@ -9,14 +10,28 @@ import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 import javax.security.auth.login.LoginException;
+import java.io.File;
+import java.net.URISyntaxException;
 
 public class EpicDiscordBot extends ListenerAdapter {
 
+
+    public static File dataDirectory;
+
     public static void main(String[] args) throws LoginException, RateLimitedException {
 
-        
 
-        new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).buildAsync();
+        try {
+            dataDirectory = new File(new File(EpicDiscordBot.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile().getParentFile().getParentFile().getPath()+"/data/commands");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        if(!dataDirectory.exists())
+            dataDirectory.mkdirs();
+
+
+        CommandProcessor.loadHookMethods();
+        new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
 
     }
 
@@ -25,12 +40,13 @@ public class EpicDiscordBot extends ListenerAdapter {
     {
         if (event.getAuthor().isBot()) return;
         Message message = event.getMessage();
-        String content = message.getRawContent();
-        long id = event.getGuild().getIdLong();
+        //event.getAuthor().openPrivateChannel().queue((channel)-> channel.sendMessage("test").queue());
+        String content = message.getContentRaw();
+        Guild server = event.getGuild();
         MessageChannel ch = event.getChannel();
-        String returnMsg = CommandParser.parseCommand(id,content);
-        if(returnMsg!=null && !returnMsg.isEmpty())
-        ch.sendMessage(returnMsg).queue();
+        User u = event.getAuthor();
+        CommandParser.parseCommand(server,content,ch,u);
+
 
 
     }

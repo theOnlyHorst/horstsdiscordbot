@@ -1,0 +1,14 @@
+{
+  "id" : 1,
+  "creatorId" : 169827037178101760,
+  "defaultCommand" : true,
+  "name" : "test",
+  "description" : "This is a Test command to plan and implement basic functions of the interpreter",
+  "argumentNames" : [
+    "TestArg1",
+    "TestArg2"
+  ],
+  "actions" : [
+    "reply('This is a Test','You specified $TestArg1 as first Argument', 'You specified $TestArg2 as second Argument')"
+  ]
+}

@@ -16,16 +16,5 @@ public class Server {
     @Setter
     private String prefix;
 
-    private List<Script> scriptList;
-
-    public void addScript(Script script)
-    {
-        scriptList.add(script);
-    }
-
-    public void removeScript(Script script)
-    {
-        scriptList.remove(script);
-    }
 
 }

@@ -1,5 +1,15 @@
 package com.theOnlyHorst.EpicDiscordBot.Controller;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.theOnlyHorst.EpicDiscordBot.EpicDiscordBot;
+import com.theOnlyHorst.EpicDiscordBot.Model.Command;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.User;
+import org.graalvm.compiler.lir.LIRInstruction;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,7 +20,7 @@ public class CommandParser {
     public static final String defaultPrefix = "!";
 
 
-    public static String parseCommand(long serverId,String content)
+    public static void parseCommand(Guild server, String content, MessageChannel channelsent, User userSent)
     {
 
         //TODO implement server prefix management
@@ -20,15 +30,80 @@ public class CommandParser {
         {
             String[] splitContent = content.replace(defaultPrefix,"").split(" ");
             String command = splitContent[0];
-            List<String> args = Arrays.asList(splitContent);
-            args.remove(0);
-            CommandParser.class.getClassLoader().getResource("Commands/"+command+".json");
 
+            //splitContent = content.replace(defaultPrefix+command+" ","").split(" ");
+
+            ArrayList<String> args = new ArrayList<String>(Arrays.asList(splitContent));
+            args.remove(0);
+
+
+            File resultFile = findCommandFile(command,server);
+
+            if(resultFile==null||!resultFile.exists())
+            {
+                channelsent.sendMessage("Command not found: " + command).queue();
+                return;
+            }
+            //channelsent.sendMessage("command found sir you can continue working on it").queue();
+            Gson gson = new Gson();
+
+            Command comToExec=null;
+
+            try ( FileInputStream fis = new FileInputStream(resultFile)){
+                comToExec = gson.fromJson(new InputStreamReader(fis), new TypeToken<Command>(){}.getType());
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            CommandProcessor.executeCommand(comToExec,args,userSent,server,channelsent);
 
         }
 
-        return null;
 
+
+    }
+
+
+    public static File findCommandFile(String command,Guild server)
+    {
+
+        File serverCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/"+server.getId());
+        File resultFile =null;
+        if(!serverCommandDir.exists())
+        {
+            serverCommandDir.mkdir();
+        }
+        else
+        {
+            if(serverCommandDir.listFiles()!=null) {
+                List<File> files = Arrays.asList(serverCommandDir.listFiles());
+                for(File f:files)
+                {
+                    if(f.getName().equals(command+".json"))
+                    {
+                        resultFile = f;
+                        break;
+                    }
+                }
+            }
+        }
+        File defaultCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/default");
+        if(resultFile==null)
+        {
+            List<File> files = Arrays.asList(defaultCommandDir.listFiles());
+            for(File f:files)
+            {
+                if(f.getName().equals(command+".json"))
+                {
+                    resultFile = f;
+                    break;
+                }
+            }
+        }
+        return resultFile;
     }
 
 
