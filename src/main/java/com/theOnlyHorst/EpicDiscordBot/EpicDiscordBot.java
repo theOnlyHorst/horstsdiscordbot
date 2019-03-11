@@ -1,7 +1,9 @@
 package com.theOnlyHorst.EpicDiscordBot;
 
+import com.theOnlyHorst.EpicDiscordBot.Controller.CommandLineParser;
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandParser;
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandProcessor;
+import com.theOnlyHorst.EpicDiscordBot.Model.Command;
 import net.dv8tion.jda.bot.JDABot;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
@@ -22,8 +24,6 @@ public class EpicDiscordBot extends ListenerAdapter {
     public static JDA jda;
     public static Guild botHome;
 
-    public static JDA mainBot;
-
     public static void main(String[] args) throws LoginException, RateLimitedException {
 
 
@@ -38,15 +38,15 @@ public class EpicDiscordBot extends ListenerAdapter {
 
 
         CommandProcessor.loadHookMethods();
-<<<<<<< HEAD
-        mainBot = new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
-=======
 
 
         jda = new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
 
         botHome = jda.getGuildById(515529753550258196L);
->>>>>>> b6be1a8271b3ef639ca38e787289192cec2fa424
+
+        Runnable consthread = () -> CommandLineParser.startUpConsole();
+
+        consthread.run();
 
     }
 

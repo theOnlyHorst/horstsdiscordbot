@@ -1,18 +1,15 @@
 package com.theOnlyHorst.EpicDiscordBot.Controller;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.theOnlyHorst.EpicDiscordBot.EpicDiscordBot;
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
-import com.theOnlyHorst.EpicDiscordBot.Model.Server;
 import net.dv8tion.jda.core.entities.*;
 
-import java.io.*;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,30 +58,11 @@ public class CommandProcessor {
 
     public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-        Matcher matchAll = Pattern.compile("(^.*?)\\((.*?)\\)$").matcher(action);
 
 
-        if(matchAll.matches()) {
-            String hookMethod = matchAll.group(1);
-            String[] methodGivenArgsRaw;
 
-            methodGivenArgsRaw = matchAll.group(2).split(",");
-
-
-            List<String> methodGivenArgs = new ArrayList<>();
-
-            for (String s : methodGivenArgsRaw) {
-                s = s.trim();
-                if (s.startsWith("'")) {
-                    Matcher m = Pattern.compile("'(.*?)'").matcher(s);
-                    if (m.find()) {
-                        methodGivenArgs.add(m.group(1));
-                    }
-                } else {
-                    if (s.matches("^.*?\\(.*\\)"))
-                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
-                }
-            }
+        String hookMethod = getHookMethodName(action);
+        List<String> methodGivenArgs = resolveMethodGivenArgs(action, command, executingUser, server, channel,msg);
 
 
             Method hookMethodObj = hookMethods.get(hookMethod);
@@ -101,38 +79,15 @@ public class CommandProcessor {
             } catch (InvocationTargetException e) {
                 e.printStackTrace();
             }
-        }
+
         return null;
     }
     public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
 
+        String hookMethod = getHookMethodName(action);
+        List<String> methodGivenArgs = resolveMethodGivenArgs(action, command, executingUser, server, channel,msg);
 
-        Matcher matchAll = Pattern.compile("(^.*?)\\((.*?)\\)$").matcher(action);
-
-
-        if(matchAll.matches()) {
-            String hookMethod = matchAll.group(1);
-            String[] methodGivenArgsRaw;
-
-            methodGivenArgsRaw = matchAll.group(2).split(",");
-
-
-            List<String> methodGivenArgs = new ArrayList<>();
-
-            for (String s : methodGivenArgsRaw) {
-
-                s = s.trim();
-                if (s.startsWith("'")) {
-                    Matcher m = Pattern.compile("'(.*?)'").matcher(s);
-                    if (m.find()) {
-                        methodGivenArgs.add(m.group(1));
-                    }
-                } else {
-                    if (s.matches("^.*?\\(.*\\)"))
-                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
-                }
-            }
 
 
             try {
@@ -148,9 +103,48 @@ public class CommandProcessor {
                 e.getCause().printStackTrace();
                 //e.printStackTrace();
             }
-        }
+
     }
 
+
+    private static List<String> resolveMethodGivenArgs(String action, Command command, User executingUser, Guild server, MessageChannel channel, Message msg)
+    {
+        Matcher matchAll = Pattern.compile("^.*?\\((.*?)\\)$").matcher(action);
+        List<String> methodGivenArgs = new ArrayList<>();
+
+        if(matchAll.matches()) {
+
+            String[] methodGivenArgsRaw;
+
+            methodGivenArgsRaw = matchAll.group(1).split(",");
+
+            for (String s : methodGivenArgsRaw) {
+
+                s = s.trim();
+                if (s.startsWith("'")) {
+                    Matcher m = Pattern.compile("'(.*?)'").matcher(s);
+                    if (m.find()) {
+                        methodGivenArgs.add(m.group(1));
+                    }
+                } else {
+                    if (s.matches("^.*?\\(.*\\)"))
+                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
+                }
+            }
+        }
+        return methodGivenArgs;
+    }
+    private static String getHookMethodName(String action) {
+        Matcher matchAll = Pattern.compile("(^.*?)\\(.*?\\)$").matcher(action);
+        String hookMethod ;
+        if(matchAll.matches()) {
+            hookMethod = matchAll.group(1);
+        }
+        else {
+            hookMethod = null;
+        }
+        return hookMethod;
+    }
 
 
     public static void loadHookMethods()
@@ -183,51 +177,20 @@ public class CommandProcessor {
 
         List<String> lines = new ArrayList<>();
         if(!methodArgs.get(0).trim().isEmpty()) {
-            File f = CommandParser.findCommandFile(methodArgs.get(0), server);
 
-            if (f == null) {
-                channelSent.sendMessage("Specified Command wasn't found").queue();
-            }
-            Gson gson = new Gson();
-
-            Command comToHelp = null;
-
-            try ( FileInputStream fis = new FileInputStream(f)){
-                comToHelp = gson.fromJson(new InputStreamReader(fis), new TypeToken<Command>() {
-                }.getType());
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
+            Command comToHelp = FileReader.getCommand(methodArgs.get(0), server.getId());
             lines.add("Command: " + comToHelp.getName());
             lines.add("Usage: " + CommandParser.defaultPrefix + comToHelp.getName() + " " + String.join(" ", comToHelp.getArgumentNames()));
             lines.add(comToHelp.getDescription());
 
-
-
         }
         else
         {
-            File serverCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/"+server.getId());
-            File defaultCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/default");
-
-            List<File> filesserver = Arrays.asList(serverCommandDir.listFiles());
-            List<File> filesdefault = Arrays.asList(defaultCommandDir.listFiles());
-
             lines.add(server.getName()+ " commands: ");
-            for (File f : filesserver)
-            {
-                lines.add(CommandParser.defaultPrefix+f.getName().replace(".json",""));
-            }
+            lines.addAll(FileReader.getCommandsForServer(server.getId()));
             lines.add("");
             lines.add("Default commands: ");
-            for (File f : filesdefault)
-            {
-                lines.add(CommandParser.defaultPrefix+f.getName().replace(".json",""));
-            }
+            lines.addAll(FileReader.getDefaultCommands());
             lines.add("");
             lines.add("For info about a command type: !help <command>");
         }
@@ -248,24 +211,8 @@ public class CommandProcessor {
         if(methodArgs.size() == 1)
         {
             String emote = methodArgs.get(0);
-            Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
 
-            if(m.matches())
-            {
-                String id = m.group(1);
-
-                Emote e = server.getEmoteById(id);
-
-                if(e!=null)
-                msg.addReaction(e).queue();
-                else {
-                   // System.out.println("emote not found");
-                }
-            }
-            else if(emote.matches("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]")){
-
-                msg.addReaction(emote).queue();
-            }
+            reactToMsg(emote,server,msg);
             //System.out.println(emote);
         }
     }
@@ -281,27 +228,12 @@ public class CommandProcessor {
             if(msgNum.matches("\\d+"))
             {
 
-                Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
+
                 MessageHistory history= channelSent.getHistory();
                 Message target ;
                 target = history.retrievePast(Integer.parseInt(msgNum)).complete().get(Integer.parseInt(msgNum)-1);
 
-                if(m.matches())
-                {
-                    String id = m.group(1);
-
-                    Emote e = server.getEmoteById(id);
-
-                    if(e!=null)
-                        target.addReaction(e).queue();
-                    else {
-                        // System.out.println("emote not found");
-                    }
-                }
-                else if(emote.matches("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]")){
-
-                    target.addReaction(emote).queue();
-                }
+                reactToMsg(emote,server,target);
             }
         }
     }
@@ -331,6 +263,26 @@ public class CommandProcessor {
         }
     }
 
+    private static void reactToMsg(String emote,Guild server,Message target)
+    {
+        Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
+        if(m.matches())
+        {
+            String id = m.group(1);
+
+            Emote e = server.getEmoteById(id);
+
+            if(e!=null)
+                target.addReaction(e).queue();
+            else {
+                // System.out.println("emote not found");
+            }
+        }
+        else if(emote.matches("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]")){
+
+            target.addReaction(emote).queue();
+        }
+    }
 
 
 

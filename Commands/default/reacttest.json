@@ -9,6 +9,6 @@
   ],
   "actions" : [
     "reply('I should have reacted to your Message')",
-    "reactToPrevious('$emote')"
+    "reactToCommand('$emote')"
   ]
 }

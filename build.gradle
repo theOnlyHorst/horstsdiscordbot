@@ -22,7 +22,9 @@ repositories {
     mavenCentral()
     jcenter()
 }
-
+run{
+    standardInput = System.in
+}
 dependencies {
     testCompile group: 'junit', name: 'junit', version: "$jUnitVersion"
     compile "net.dv8tion:JDA:$jdaVersion"
