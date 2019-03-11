@@ -61,104 +61,93 @@ public class CommandProcessor {
 
     public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-        Matcher methmatcher = Pattern.compile("^(.*?)\\(").matcher(action);
-        Matcher argmatcher = Pattern.compile("\\((.*?)\\)$").matcher(action);
+        Matcher matchAll = Pattern.compile("(^.*?)\\((.*?)\\)$").matcher(action);
 
-        methmatcher.find();
 
-        String hookMethod = methmatcher.group(1);
-        String[] methodGivenArgsRaw;
-        if(argmatcher.find())
-         methodGivenArgsRaw= argmatcher.group(1).split(",");
-        else
-        {
-            methodGivenArgsRaw=new String[0];
-        }
+        if(matchAll.matches()) {
+            String hookMethod = matchAll.group(1);
+            String[] methodGivenArgsRaw;
 
-        List<String> methodGivenArgs = new ArrayList<>();
+            methodGivenArgsRaw = matchAll.group(2).split(",");
 
-        for (String s:methodGivenArgsRaw) {
-            s=s.trim();
-            if(s.startsWith("'")) {
-                Matcher m = Pattern.compile("'(.*?)'").matcher(s);
-                if (m.find()) {
-                    methodGivenArgs.add(m.group(1));
+
+            List<String> methodGivenArgs = new ArrayList<>();
+
+            for (String s : methodGivenArgsRaw) {
+                s = s.trim();
+                if (s.startsWith("'")) {
+                    Matcher m = Pattern.compile("'(.*?)'").matcher(s);
+                    if (m.find()) {
+                        methodGivenArgs.add(m.group(1));
+                    }
+                } else {
+                    if (s.matches("^.*?\\(.*\\)"))
+                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
                 }
             }
-            else {
-                if(s.matches("^.*?\\(.*\\)"))
-                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
+
+
+            Method hookMethodObj = hookMethods.get(hookMethod);
+
+            try {
+                if (hookMethodObj.getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
+                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                } else if (!hookMethodObj.getAnnotation(HookMethod.class).hidden() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
+                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                }
+
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
-        }
-
-
-        Method hookMethodObj = hookMethods.get(hookMethod);
-
-        try {
-            if(hookMethodObj.getAnnotation(HookMethod.class).hidden()&&command.isDefaultCommand()&&hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue())
-            {
-                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,msg,methodGivenArgs);
-            }
-            else if(!hookMethodObj.getAnnotation(HookMethod.class).hidden()&&hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue())
-            {
-                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,msg,methodGivenArgs);
-            }
-
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
         }
         return null;
     }
     public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-        Matcher methmatcher = Pattern.compile("^(.*?)\\(").matcher(action);
-        Matcher argmatcher = Pattern.compile("\\((.*?)\\)$").matcher(action);
 
-        methmatcher.find();
-        String hookMethod = methmatcher.group(1);
-        String[] methodGivenArgsRaw;
-        if(argmatcher.find())
-            methodGivenArgsRaw= argmatcher.group(1).split(",");
-        else
-        {
-            methodGivenArgsRaw=new String[0];
-        }
 
-        List<String> methodGivenArgs = new ArrayList<>();
+        Matcher matchAll = Pattern.compile("(^.*?)\\((.*?)\\)$").matcher(action);
 
-        for (String s:methodGivenArgsRaw) {
 
-            s=s.trim();
-            if(s.startsWith("'")) {
-                Matcher m = Pattern.compile("'(.*?)'").matcher(s);
-                if (m.find()) {
-                    methodGivenArgs.add(m.group(1));
+        if(matchAll.matches()) {
+            String hookMethod = matchAll.group(1);
+            String[] methodGivenArgsRaw;
+
+            methodGivenArgsRaw = matchAll.group(2).split(",");
+
+
+            List<String> methodGivenArgs = new ArrayList<>();
+
+            for (String s : methodGivenArgsRaw) {
+
+                s = s.trim();
+                if (s.startsWith("'")) {
+                    Matcher m = Pattern.compile("'(.*?)'").matcher(s);
+                    if (m.find()) {
+                        methodGivenArgs.add(m.group(1));
+                    }
+                } else {
+                    if (s.matches("^.*?\\(.*\\)"))
+                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
                 }
             }
-            else {
-                if(s.matches("^.*?\\(.*\\)"))
-                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel,msg));
-            }
-        }
 
 
-        try {
-            if(hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden()&&command.isDefaultCommand())
-            {
-                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,msg,methodGivenArgs);
-            }
-            else if(!hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden())
-            {
-                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,msg,methodGivenArgs);
-            }
+            try {
+                if (hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand()) {
+                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                } else if (!hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden()) {
+                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                }
 
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.getCause().printStackTrace();
-            //e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.getCause().printStackTrace();
+                //e.printStackTrace();
+            }
         }
     }
 
