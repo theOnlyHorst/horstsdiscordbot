@@ -5,10 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.theOnlyHorst.EpicDiscordBot.EpicDiscordBot;
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
 import com.theOnlyHorst.EpicDiscordBot.Model.Server;
-import net.dv8tion.jda.core.entities.Channel;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.entities.*;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -27,7 +24,7 @@ public class CommandProcessor {
     private static Map<String,Method> hookMethods;
 
 
-    public static void executeCommand(Command command, ArrayList<String> args, User executingUser, Guild server, MessageChannel channel)
+    public static void executeCommand(Command command, ArrayList<String> args, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
         while (command.getArgumentNames().size()>args.size())
         {
@@ -44,7 +41,7 @@ public class CommandProcessor {
                 {
                     if(c.contains("$"+a))
                     {
-                        endAction = endAction.replace("$"+a,args.get(command.getArgumentNames().indexOf(a)));
+                        endAction = endAction.replace("$"+a, args.get(command.getArgumentNames().indexOf(a)));
                     }
                 }
 
@@ -55,100 +52,102 @@ public class CommandProcessor {
             //channel.sendMessage(endAction).queue();
             //####################################
 
-            executeHook(command,endAction,executingUser,server,channel);
+            executeHook(command,endAction,executingUser,server,channel,msg);
 
 
 
         }
     }
 
-    public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel)
+    public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-        Matcher methmatcher = Pattern.compile("^.*?(?=\\()").matcher(action);
-        Matcher argmatcher = Pattern.compile("(?<=\\()(.*?)(?=\\)(?!\\)))").matcher(action);
+        Matcher matchAll = Pattern.compile("(^.*?)\\((.*?)\\)$").matcher(action);
 
-        methmatcher.find();
-        argmatcher.find();
-        String hookMethod = methmatcher.group();
-        String[] methodGivenArgsRaw = argmatcher.group().split(",");
 
-        List<String> methodGivenArgs = new ArrayList<>();
+        if(matchAll.matches()) {
+            String hookMethod = matchAll.group(1);
+            String[] methodGivenArgsRaw;
 
-        for (String s:methodGivenArgsRaw) {
-            s=s.trim();
-            if(s.startsWith("'")) {
-                Matcher m = Pattern.compile("(?<=')(.*?)(?=')").matcher(s);
-                if (m.find()) {
-                    methodGivenArgs.add(m.group());
+            methodGivenArgsRaw = matchAll.group(2).split(",");
+
+
+            List<String> methodGivenArgs = new ArrayList<>();
+
+            for (String s : methodGivenArgsRaw) {
+                s = s.trim();
+                if (s.startsWith("'")) {
+                    Matcher m = Pattern.compile("'(.*?)'").matcher(s);
+                    if (m.find()) {
+                        methodGivenArgs.add(m.group(1));
+                    }
+                } else {
+                    if (s.matches("^.*?\\(.*\\)"))
+                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
                 }
             }
-            else {
-                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel));
+
+
+            Method hookMethodObj = hookMethods.get(hookMethod);
+
+            try {
+                if (hookMethodObj.getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
+                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                } else if (!hookMethodObj.getAnnotation(HookMethod.class).hidden() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
+                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                }
+
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
-        }
-
-
-        Method hookMethodObj = hookMethods.get(hookMethod);
-
-        try {
-            if(hookMethodObj.getAnnotation(HookMethod.class).hidden()&&command.isDefaultCommand()&&hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue())
-            {
-                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,methodGivenArgs);
-            }
-            else if(!hookMethodObj.getAnnotation(HookMethod.class).hidden()&&hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue())
-            {
-                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,methodGivenArgs);
-            }
-
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
         }
         return null;
     }
-    public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel)
+    public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-        Matcher methmatcher = Pattern.compile("^.*?(?=\\()").matcher(action);
-        Matcher argmatcher = Pattern.compile("(?<=\\()(.*?)(?=\\)(?!\\)))").matcher(action);
 
-        methmatcher.find();
-        argmatcher.find();
-        String hookMethod = methmatcher.group();
-        String[] methodGivenArgsRaw = argmatcher.group().split(",");
 
-        List<String> methodGivenArgs = new ArrayList<>();
+        Matcher matchAll = Pattern.compile("(^.*?)\\((.*?)\\)$").matcher(action);
 
-        for (String s:methodGivenArgsRaw) {
 
-            s=s.trim();
-            if(s.startsWith("'")) {
-                Matcher m = Pattern.compile("(?<=')(.*?)(?=')").matcher(s);
-                if (m.find()) {
-                    methodGivenArgs.add(m.group());
+        if(matchAll.matches()) {
+            String hookMethod = matchAll.group(1);
+            String[] methodGivenArgsRaw;
+
+            methodGivenArgsRaw = matchAll.group(2).split(",");
+
+
+            List<String> methodGivenArgs = new ArrayList<>();
+
+            for (String s : methodGivenArgsRaw) {
+
+                s = s.trim();
+                if (s.startsWith("'")) {
+                    Matcher m = Pattern.compile("'(.*?)'").matcher(s);
+                    if (m.find()) {
+                        methodGivenArgs.add(m.group(1));
+                    }
+                } else {
+                    if (s.matches("^.*?\\(.*\\)"))
+                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
                 }
             }
-            else {
-                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel));
-            }
-        }
 
 
-        try {
-            if(hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden()&&command.isDefaultCommand())
-            {
-                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,methodGivenArgs);
-            }
-            else if(!hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden())
-            {
-                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,methodGivenArgs);
-            }
+            try {
+                if (hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand()) {
+                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                } else if (!hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden()) {
+                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                }
 
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.getCause().printStackTrace();
-            //e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.getCause().printStackTrace();
+                //e.printStackTrace();
+            }
         }
     }
 
@@ -173,14 +172,13 @@ public class CommandProcessor {
 
 
     @HookMethod(name = "reply",hidden = false,hasReturnValue = false)
-    public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, List<String> methodArgs)
+    public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, Message msg, List<String> methodArgs)
     {
-
         channelSent.sendMessage(String.join("\n",methodArgs)).queue();
     }
 
     @HookMethod(name = "help",hidden = true, hasReturnValue = true)
-    public static List<String> helpCommand(MessageChannel channelSent, User userSent, Guild server, List<String> methodArgs)
+    public static List<String> helpCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
     {
 
         List<String> lines = new ArrayList<>();
@@ -239,9 +237,98 @@ public class CommandProcessor {
     }
 
     @HookMethod(name = "privateMessage",hidden = false,hasReturnValue = false)
-    public static void pmCommand(MessageChannel channelSent, User userSent, Guild server, List<String> methodArgs)
+    public static void pmCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
     {
         userSent.openPrivateChannel().queue((channel) -> channel.sendMessage(String.join("\n", methodArgs)).queue());
+    }
+
+    @HookMethod(name = "reactToCommand", hidden = false, hasReturnValue = false)
+    public static void reactToCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        if(methodArgs.size() == 1)
+        {
+            String emote = methodArgs.get(0);
+            Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
+
+            if(m.matches())
+            {
+                String id = m.group(1);
+
+                Emote e = server.getEmoteById(id);
+
+                if(e!=null)
+                msg.addReaction(e).queue();
+                else {
+                   // System.out.println("emote not found");
+                }
+            }
+            else if(emote.matches("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]")){
+
+                msg.addReaction(emote).queue();
+            }
+            //System.out.println(emote);
+        }
+    }
+
+    @HookMethod(name = "reactToPrevious", hidden = false, hasReturnValue = false)
+    public static void reactToPreviousCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        if(methodArgs.size() == 2)
+        {
+            String emote = methodArgs.get(0);
+            String msgNum = methodArgs.get(1);
+
+            if(msgNum.matches("\\d+"))
+            {
+
+                Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
+                MessageHistory history= channelSent.getHistory();
+                Message target ;
+                target = history.retrievePast(Integer.parseInt(msgNum)).complete().get(Integer.parseInt(msgNum)-1);
+
+                if(m.matches())
+                {
+                    String id = m.group(1);
+
+                    Emote e = server.getEmoteById(id);
+
+                    if(e!=null)
+                        target.addReaction(e).queue();
+                    else {
+                        // System.out.println("emote not found");
+                    }
+                }
+                else if(emote.matches("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]")){
+
+                    target.addReaction(emote).queue();
+                }
+            }
+        }
+    }
+
+    @HookMethod(name = "deleteCommand", hidden = false,hasReturnValue = false)
+    public static void deleteWrittenCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        msg.delete().queue();
+    }
+
+    @HookMethod(name = "purge", hidden = false, hasReturnValue = false)
+    public static void purgeMessagesCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        if(methodArgs.size()==1) {
+
+            String msgNum = methodArgs.get(0);
+
+            if(msgNum.matches("\\d+")) {
+
+                MessageHistory history = channelSent.getHistory();
+                history.retrievePast(Integer.parseInt(msgNum)+1).queue((list) -> list.forEach((target) -> {
+                    if(!target.equals(msg)) {
+                        target.delete().queue();
+                    }
+                }));
+            }
+        }
     }
 
 

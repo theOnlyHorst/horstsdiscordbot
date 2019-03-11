@@ -9,6 +9,7 @@ import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
@@ -18,6 +19,8 @@ public class EpicDiscordBot extends ListenerAdapter {
 
 
     public static File dataDirectory;
+    public static JDA jda;
+    public static Guild botHome;
 
     public static JDA mainBot;
 
@@ -33,8 +36,17 @@ public class EpicDiscordBot extends ListenerAdapter {
             dataDirectory.mkdirs();
 
 
+
         CommandProcessor.loadHookMethods();
+<<<<<<< HEAD
         mainBot = new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
+=======
+
+
+        jda = new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
+
+        botHome = jda.getGuildById(515529753550258196L);
+>>>>>>> b6be1a8271b3ef639ca38e787289192cec2fa424
 
     }
 
@@ -48,7 +60,7 @@ public class EpicDiscordBot extends ListenerAdapter {
         Guild server = event.getGuild();
         MessageChannel ch = event.getChannel();
         User u = event.getAuthor();
-        CommandParser.parseCommand(server,content,ch,u);
+        CommandParser.parseCommand(server,content,ch,u,message);
 
 
 

@@ -1,13 +1,14 @@
 {
-  "id" : 3,
+  "id" : 4,
   "creatorId" : 169827037178101760,
   "defaultCommand" : true,
-  "name" : "pmtest",
+  "name" : "reacttest",
   "description" : "This is a Test command to plan and implement basic functions of the interpreter",
   "argumentNames" : [
+	"emote"
   ],
   "actions" : [
-    "reply('you should recieve a pm shortly')",
-    "privateMessage('henlo this a pm')"
+    "reply('I should have reacted to your Message')",
+    "reactToPrevious('$emote')"
   ]
 }

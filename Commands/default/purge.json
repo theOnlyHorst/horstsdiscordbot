@@ -1,0 +1,14 @@
+{
+  "id" : 8,
+  "creatorId" : 169827037178101760,
+  "defaultCommand" : true,
+  "name" : "purge",
+  "description" : "This command purges the specified Amount of messages",
+  "argumentNames" : [
+    "amount"
+  ],
+  "actions" : [
+    "purge('$amount')",
+    "reply('I should have purged $amount messages')"
+  ]
+}

@@ -5,8 +5,13 @@ import com.google.gson.reflect.TypeToken;
 import com.theOnlyHorst.EpicDiscordBot.EpicDiscordBot;
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
+<<<<<<< HEAD
+=======
+
+>>>>>>> b6be1a8271b3ef639ca38e787289192cec2fa424
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +23,7 @@ public class CommandParser {
     public static final String defaultPrefix = "!";
 
 
-    public static void parseCommand(Guild server, String content, MessageChannel channelsent, User userSent)
+    public static void parseCommand(Guild server, String content, MessageChannel channelsent, User userSent, Message msg)
     {
 
         //TODO implement server prefix management
@@ -56,7 +61,7 @@ public class CommandParser {
             }
 
 
-            CommandProcessor.executeCommand(comToExec,args,userSent,server,channelsent);
+            CommandProcessor.executeCommand(comToExec,args,userSent,server,channelsent,msg);
 
         }
 

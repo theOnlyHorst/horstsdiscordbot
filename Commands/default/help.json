@@ -3,12 +3,12 @@
   "id" : 2,
   "creatorId" : 169827037178101760,
   "defaultCommand" : true,
-  "name" : "test",
+  "name" : "help",
   "description" : "Help Command. Will tell you how to use any other command",
   "argumentNames" : [
     "command"
   ],
   "actions" : [
-    "reply(help($command))"
+    "reply(help('$command'))"
   ]
 }
