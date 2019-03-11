@@ -2,7 +2,7 @@
   "id" : 7,
   "creatorId" : 169827037178101760,
   "defaultCommand" : true,
-  "name" : "test",
+  "name" : "deleteCommandTest",
   "description" : "This is a Test command to plan and implement basic functions of the interpreter",
   "argumentNames" : [
   ],

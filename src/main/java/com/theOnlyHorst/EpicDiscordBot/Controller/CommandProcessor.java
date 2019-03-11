@@ -174,7 +174,6 @@ public class CommandProcessor {
     @HookMethod(name = "reply",hidden = false,hasReturnValue = false)
     public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, Message msg, List<String> methodArgs)
     {
-
         channelSent.sendMessage(String.join("\n",methodArgs)).queue();
     }
 
@@ -279,7 +278,7 @@ public class CommandProcessor {
             String emote = methodArgs.get(0);
             String msgNum = methodArgs.get(1);
 
-            if(msgNum.matches("\\d"))
+            if(msgNum.matches("\\d+"))
             {
 
                 Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
@@ -311,6 +310,25 @@ public class CommandProcessor {
     public static void deleteWrittenCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
     {
         msg.delete().queue();
+    }
+
+    @HookMethod(name = "purge", hidden = false, hasReturnValue = false)
+    public static void purgeMessagesCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        if(methodArgs.size()==1) {
+
+            String msgNum = methodArgs.get(0);
+
+            if(msgNum.matches("\\d+")) {
+
+                MessageHistory history = channelSent.getHistory();
+                history.retrievePast(Integer.parseInt(msgNum)+1).queue((list) -> list.forEach((target) -> {
+                    if(!target.equals(msg)) {
+                        target.delete().queue();
+                    }
+                }));
+            }
+        }
     }
 
 

@@ -2,7 +2,7 @@
   "id" : 6,
   "creatorId" : 169827037178101760,
   "defaultCommand" : true,
-  "name" : "test",
+  "name" : "reactspecifictest",
   "description" : "This is a Test command to plan and implement basic functions of the interpreter",
   "argumentNames" : [
 	"emote",
