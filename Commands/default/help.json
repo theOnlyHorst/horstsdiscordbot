@@ -9,6 +9,6 @@
     "command"
   ],
   "actions" : [
-    "reply(help($command))"
+    "reply(help('$command'))"
   ]
 }

@@ -5,10 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.theOnlyHorst.EpicDiscordBot.EpicDiscordBot;
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
 import com.theOnlyHorst.EpicDiscordBot.Model.Server;
-import net.dv8tion.jda.core.entities.Channel;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.entities.*;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -27,7 +24,7 @@ public class CommandProcessor {
     private static Map<String,Method> hookMethods;
 
 
-    public static void executeCommand(Command command, ArrayList<String> args, User executingUser, Guild server, MessageChannel channel)
+    public static void executeCommand(Command command, ArrayList<String> args, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
         while (command.getArgumentNames().size()>args.size())
         {
@@ -44,7 +41,7 @@ public class CommandProcessor {
                 {
                     if(c.contains("$"+a))
                     {
-                        endAction = endAction.replace("$"+a,args.get(command.getArgumentNames().indexOf(a)));
+                        endAction = endAction.replace("$"+a, args.get(command.getArgumentNames().indexOf(a)));
                     }
                 }
 
@@ -55,14 +52,14 @@ public class CommandProcessor {
             //channel.sendMessage(endAction).queue();
             //####################################
 
-            executeHook(command,endAction,executingUser,server,channel);
+            executeHook(command,endAction,executingUser,server,channel,msg);
 
 
 
         }
     }
 
-    public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel)
+    public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
         Matcher methmatcher = Pattern.compile("^.*?(?=\\()").matcher(action);
         Matcher argmatcher = Pattern.compile("(?<=\\()(.*?)(?=\\)(?!\\)))").matcher(action);
@@ -83,7 +80,7 @@ public class CommandProcessor {
                 }
             }
             else {
-                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel));
+                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
             }
         }
 
@@ -93,11 +90,11 @@ public class CommandProcessor {
         try {
             if(hookMethodObj.getAnnotation(HookMethod.class).hidden()&&command.isDefaultCommand()&&hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue())
             {
-                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,methodGivenArgs);
+                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,msg,methodGivenArgs);
             }
             else if(!hookMethodObj.getAnnotation(HookMethod.class).hidden()&&hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue())
             {
-                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,methodGivenArgs);
+                return  (List<String>)hookMethodObj.invoke(null,channel,executingUser,server,msg,methodGivenArgs);
             }
 
         } catch (IllegalAccessException e) {
@@ -107,7 +104,7 @@ public class CommandProcessor {
         }
         return null;
     }
-    public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel)
+    public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
         Matcher methmatcher = Pattern.compile("^.*?(?=\\()").matcher(action);
         Matcher argmatcher = Pattern.compile("(?<=\\()(.*?)(?=\\)(?!\\)))").matcher(action);
@@ -129,7 +126,7 @@ public class CommandProcessor {
                 }
             }
             else {
-                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel));
+                methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel,msg));
             }
         }
 
@@ -137,11 +134,11 @@ public class CommandProcessor {
         try {
             if(hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden()&&command.isDefaultCommand())
             {
-                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,methodGivenArgs);
+                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,msg,methodGivenArgs);
             }
             else if(!hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden())
             {
-                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,methodGivenArgs);
+                hookMethods.get(hookMethod).invoke(null,channel,executingUser,server,msg,methodGivenArgs);
             }
 
         } catch (IllegalAccessException e) {
@@ -173,14 +170,14 @@ public class CommandProcessor {
 
 
     @HookMethod(name = "reply",hidden = false,hasReturnValue = false)
-    public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, List<String> methodArgs)
+    public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, Message msg, List<String> methodArgs)
     {
 
         channelSent.sendMessage(String.join("\n",methodArgs)).queue();
     }
 
     @HookMethod(name = "help",hidden = true, hasReturnValue = true)
-    public static List<String> helpCommand(MessageChannel channelSent, User userSent, Guild server, List<String> methodArgs)
+    public static List<String> helpCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
     {
 
         List<String> lines = new ArrayList<>();
@@ -239,9 +236,29 @@ public class CommandProcessor {
     }
 
     @HookMethod(name = "privateMessage",hidden = false,hasReturnValue = false)
-    public static void pmCommand(MessageChannel channelSent, User userSent, Guild server, List<String> methodArgs)
+    public static void pmCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
     {
         userSent.openPrivateChannel().queue((channel) -> channel.sendMessage(String.join("\n", methodArgs)).queue());
+    }
+
+    @HookMethod(name = "reactToPrevious", hidden = false, hasReturnValue = false)
+    public static void reactToPreviousCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        if(methodArgs.size() == 1)
+        {
+            String emote = methodArgs.get(0);
+
+        }
+    }
+
+    @HookMethod(name = "reactToOwn", hidden = false, hasReturnValue = false)
+    public static void reactToOwnCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        if(methodArgs.size() == 1)
+        {
+            String emote = methodArgs.get(0);
+
+        }
     }
 
 

@@ -45,7 +45,7 @@ public class EpicDiscordBot extends ListenerAdapter {
         Guild server = event.getGuild();
         MessageChannel ch = event.getChannel();
         User u = event.getAuthor();
-        CommandParser.parseCommand(server,content,ch,u);
+        CommandParser.parseCommand(server,content,ch,u,message);
 
 
 
