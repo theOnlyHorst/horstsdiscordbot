@@ -8,6 +8,7 @@ import net.dv8tion.jda.core.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
@@ -17,6 +18,8 @@ public class EpicDiscordBot extends ListenerAdapter {
 
 
     public static File dataDirectory;
+    public static JDA jda;
+    public static Guild botHome;
 
     public static void main(String[] args) throws LoginException, RateLimitedException {
 
@@ -30,8 +33,13 @@ public class EpicDiscordBot extends ListenerAdapter {
             dataDirectory.mkdirs();
 
 
+
         CommandProcessor.loadHookMethods();
-        new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
+
+
+        jda = new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
+
+        botHome = jda.getGuildById(515529753550258196L);
 
     }
 

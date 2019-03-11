@@ -61,25 +61,32 @@ public class CommandProcessor {
 
     public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-        Matcher methmatcher = Pattern.compile("^.*?(?=\\()").matcher(action);
-        Matcher argmatcher = Pattern.compile("(?<=\\()(.*?)(?=\\)(?!\\)))").matcher(action);
+        Matcher methmatcher = Pattern.compile("^(.*?)\\(").matcher(action);
+        Matcher argmatcher = Pattern.compile("\\((.*?)\\)$").matcher(action);
 
         methmatcher.find();
-        argmatcher.find();
-        String hookMethod = methmatcher.group();
-        String[] methodGivenArgsRaw = argmatcher.group().split(",");
+
+        String hookMethod = methmatcher.group(1);
+        String[] methodGivenArgsRaw;
+        if(argmatcher.find())
+         methodGivenArgsRaw= argmatcher.group(1).split(",");
+        else
+        {
+            methodGivenArgsRaw=new String[0];
+        }
 
         List<String> methodGivenArgs = new ArrayList<>();
 
         for (String s:methodGivenArgsRaw) {
             s=s.trim();
             if(s.startsWith("'")) {
-                Matcher m = Pattern.compile("(?<=')(.*?)(?=')").matcher(s);
+                Matcher m = Pattern.compile("'(.*?)'").matcher(s);
                 if (m.find()) {
-                    methodGivenArgs.add(m.group());
+                    methodGivenArgs.add(m.group(1));
                 }
             }
             else {
+                if(s.matches("^.*?\\(.*\\)"))
                 methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
             }
         }
@@ -106,13 +113,18 @@ public class CommandProcessor {
     }
     public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-        Matcher methmatcher = Pattern.compile("^.*?(?=\\()").matcher(action);
-        Matcher argmatcher = Pattern.compile("(?<=\\()(.*?)(?=\\)(?!\\)))").matcher(action);
+        Matcher methmatcher = Pattern.compile("^(.*?)\\(").matcher(action);
+        Matcher argmatcher = Pattern.compile("\\((.*?)\\)$").matcher(action);
 
         methmatcher.find();
-        argmatcher.find();
-        String hookMethod = methmatcher.group();
-        String[] methodGivenArgsRaw = argmatcher.group().split(",");
+        String hookMethod = methmatcher.group(1);
+        String[] methodGivenArgsRaw;
+        if(argmatcher.find())
+            methodGivenArgsRaw= argmatcher.group(1).split(",");
+        else
+        {
+            methodGivenArgsRaw=new String[0];
+        }
 
         List<String> methodGivenArgs = new ArrayList<>();
 
@@ -120,12 +132,13 @@ public class CommandProcessor {
 
             s=s.trim();
             if(s.startsWith("'")) {
-                Matcher m = Pattern.compile("(?<=')(.*?)(?=')").matcher(s);
+                Matcher m = Pattern.compile("'(.*?)'").matcher(s);
                 if (m.find()) {
-                    methodGivenArgs.add(m.group());
+                    methodGivenArgs.add(m.group(1));
                 }
             }
             else {
+                if(s.matches("^.*?\\(.*\\)"))
                 methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel,msg));
             }
         }
@@ -241,24 +254,74 @@ public class CommandProcessor {
         userSent.openPrivateChannel().queue((channel) -> channel.sendMessage(String.join("\n", methodArgs)).queue());
     }
 
-    @HookMethod(name = "reactToPrevious", hidden = false, hasReturnValue = false)
-    public static void reactToPreviousCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    @HookMethod(name = "reactToCommand", hidden = false, hasReturnValue = false)
+    public static void reactToCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
     {
         if(methodArgs.size() == 1)
         {
             String emote = methodArgs.get(0);
+            Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
 
+            if(m.matches())
+            {
+                String id = m.group(1);
+
+                Emote e = server.getEmoteById(id);
+
+                if(e!=null)
+                msg.addReaction(e).queue();
+                else {
+                   // System.out.println("emote not found");
+                }
+            }
+            else if(emote.matches("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]")){
+
+                msg.addReaction(emote).queue();
+            }
+            //System.out.println(emote);
         }
     }
 
-    @HookMethod(name = "reactToOwn", hidden = false, hasReturnValue = false)
-    public static void reactToOwnCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    @HookMethod(name = "reactToPrevious", hidden = false, hasReturnValue = false)
+    public static void reactToPreviousCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
     {
-        if(methodArgs.size() == 1)
+        if(methodArgs.size() == 2)
         {
             String emote = methodArgs.get(0);
+            String msgNum = methodArgs.get(1);
 
+            if(msgNum.matches("\\d"))
+            {
+
+                Matcher m = Pattern.compile("<:.*:(\\d*)>").matcher(emote);
+                MessageHistory history= channelSent.getHistory();
+                Message target ;
+                target = history.retrievePast(Integer.parseInt(msgNum)).complete().get(Integer.parseInt(msgNum)-1);
+
+                if(m.matches())
+                {
+                    String id = m.group(1);
+
+                    Emote e = server.getEmoteById(id);
+
+                    if(e!=null)
+                        target.addReaction(e).queue();
+                    else {
+                        // System.out.println("emote not found");
+                    }
+                }
+                else if(emote.matches("[\\u20a0-\\u32ff\\ud83c\\udc00-\\ud83d\\udeff\\udbb9\\udce5-\\udbb9\\udcee]")){
+
+                    target.addReaction(emote).queue();
+                }
+            }
         }
+    }
+
+    @HookMethod(name = "deleteCommand", hidden = false,hasReturnValue = false)
+    public static void deleteWrittenCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    {
+        msg.delete().queue();
     }
 
 

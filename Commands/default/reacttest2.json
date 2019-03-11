@@ -1,0 +1,14 @@
+{
+  "id" : 5,
+  "creatorId" : 169827037178101760,
+  "defaultCommand" : true,
+  "name" : "test",
+  "description" : "This is a Test command to plan and implement basic functions of the interpreter",
+  "argumentNames" : [
+	"emote"
+  ],
+  "actions" : [
+    "reply('I should have reacted to my Message')",
+    "reactToPrevious('$emote','1')"
+  ]
+}
