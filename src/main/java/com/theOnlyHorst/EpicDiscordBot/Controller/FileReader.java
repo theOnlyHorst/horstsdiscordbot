@@ -19,20 +19,20 @@ public class FileReader {
         List<File> filesserver = Arrays.asList(serverCommandDir.listFiles());
         for (File f : filesserver)
         {
-            returnVal.add(CommandParser.defaultPrefix+f.getName().replace(".json",""));
+            returnVal.add(CommandParser.getServerPrefix(Long.parseLong(serverId))+f.getName().replace(".json",""));
         }
 
         return returnVal;
     }
 
-    public static List<String> getDefaultCommands()
+    public static List<String> getDefaultCommands(String serverId)
     {
         List<String> returnVal = new ArrayList<>();
         File defaultCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/default");
         List<File> filesdefault = Arrays.asList(defaultCommandDir.listFiles());
         for (File f : filesdefault)
         {
-            returnVal.add(CommandParser.defaultPrefix+f.getName().replace(".json",""));
+            returnVal.add(CommandParser.getServerPrefix(Long.parseLong(serverId))+f.getName().replace(".json",""));
         }
         return returnVal;
     }
@@ -81,7 +81,6 @@ public class FileReader {
 
         File resultFile = findCommandFile(commandName,serverId);
         Gson gson = new Gson();
-
         Command ret=null;
 
         try ( FileInputStream fis = new FileInputStream(resultFile)){

@@ -12,18 +12,16 @@ import java.util.Arrays;
 public class CommandParser {
 
 
-    public static final String defaultPrefix = "!";
+    private static final String defaultPrefix = "!";
 
 
     public static void parseCommand(Guild server, String content, MessageChannel channelsent, User userSent, Message msg)
     {
 
-        //TODO implement server prefix management
-
         //else
-        if(content.startsWith(defaultPrefix))
+        if(content.startsWith(getServerPrefix(server.getIdLong())))
         {
-            String[] splitContent = content.replace(defaultPrefix,"").split(" ");
+            String[] splitContent = content.replace(getServerPrefix(server.getIdLong()),"").split(" ");
             String command = splitContent[0];
 
             //splitContent = content.replace(defaultPrefix+command+" ","").split(" ");
@@ -33,7 +31,7 @@ public class CommandParser {
 
 
 
-           Command comToExec = FileReader.getCommand(command,server.getId());
+            Command comToExec = FileReader.getCommand(command,server.getId());
 
 
 
@@ -42,6 +40,25 @@ public class CommandParser {
         }
 
 
+
+    }
+
+    public static String getServerPrefix(Long serverId)
+    {
+
+        //TODO read prefix from server
+        /*
+        * if(...)
+        * {
+        *
+        *
+        * }
+        *
+        * else
+        * {
+        */
+        return defaultPrefix;
+        //}
 
     }
 
