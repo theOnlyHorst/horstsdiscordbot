@@ -58,9 +58,6 @@ public class CommandProcessor {
 
     public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
-
-
-
         String hookMethod = getHookMethodName(action);
         List<String> methodGivenArgs = resolveMethodGivenArgs(action, command, executingUser, server, channel,msg);
 
@@ -283,6 +280,8 @@ public class CommandProcessor {
             target.addReaction(emote).queue();
         }
     }
+
+
 
 
 
