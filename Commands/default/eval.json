@@ -1,0 +1,19 @@
+{
+  "id" : 9,
+  "creatorId" : 169827037178101760,
+  "defaultCommand" : true,
+  "name" : "eval",
+  "description" : "evaluates a condition, should be used to try if your conditions work",
+  "argumentNames" : [
+    "condition"
+  ],
+  "actions" : [
+    "assert(isCondition('?$condition'))",
+    ":assert(?$condition)",
+    "::reply('condition is true')",
+    ":!reply('condition is false')",
+    ":endAssert",
+    "!reply('the Value is not a condition')",
+    "endAssert"
+  ]
+}

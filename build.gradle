@@ -32,5 +32,6 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
     compile "org.hibernate:hibernate-core:$hibernateVersion"
     implementation 'com.google.code.gson:gson:2.8.5'
+    compile 'com.udojava:EvalEx:2.1'
 }
 compileJava.options.encoding = 'UTF-8'

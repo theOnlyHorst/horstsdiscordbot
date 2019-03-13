@@ -1,11 +1,16 @@
 package com.theOnlyHorst.EpicDiscordBot.Controller;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
+import com.theOnlyHorst.EpicDiscordBot.Model.CommandState;
+import com.udojava.evalex.Expression;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +28,7 @@ public class CommandProcessor {
 
     public static void executeCommand(Command command, ArrayList<String> args, User executingUser, Guild server, MessageChannel channel, Message msg)
     {
+        CommandState commandState = new CommandState();
         while (command.getArgumentNames().size()>args.size())
         {
             args.add("");
@@ -43,32 +49,107 @@ public class CommandProcessor {
                 }
 
             }
+            boolean finishLoop = true;
+            for(boolean condstate : commandState.getConditionStates())
+            {
+                if(endAction.startsWith(":"))
+                {
+                    if(condstate)
+                    endAction = endAction.replaceFirst(":","");
+                    else
+                        finishLoop = false;
 
+                }
+                else if(endAction.startsWith("!"))
+                {
+                    if(!condstate)
+                    {
+                        endAction = endAction.replaceFirst("!","");
+                    }
+                    else
+                        finishLoop = false;
+                }else
+                if(endAction.equals("endAssert"))
+                {
+                    if(commandState.getConditionStates().size()>0)
+                    {
+                        commandState.getConditionStates().remove(commandState.getConditionStates().size()-1);
+                    }
+                    finishLoop = false;
+                    break;
+                }
+                else
+                {
+                    throw new RuntimeException("action is missing an on false or on true prefix");
+                }
+            }
+
+            if(!finishLoop)
+            {
+                continue;
+            }
+            /*if(c.startsWith(":"))
+            {
+                if(commandState.getConditionStates().size()>0) {
+                    if (commandState.getConditionStates().get(commandState.getConditionStates().size()-1)) {
+                        endAction = endAction.replaceFirst(":","");
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    throw new RuntimeException("Can't have on true value while not in an assert state");
+                }
+
+            }else if(c.startsWith("!"))
+            {
+                if(commandState.getConditionStates().size()>0) {
+                    if (!commandState.getConditionStates().get(commandState.getConditionStates().size()-1)) {
+                        endAction = endAction.replaceFirst("!", "");
+                    } else {
+                        continue;
+                    }
+                }
+                else
+                {
+                    throw new RuntimeException("Can't have on false value while not in an assert state");
+                }
+            }
+            else*/
+            if(!c.matches("[!:].+?"))
+            {
+                if(commandState.getConditionStates().size()>0) {
+                    throw new RuntimeException("Can't have non on true or on false value while in an assert state");
+                }
+            }
 
             //DEBUG
             //channel.sendMessage(endAction).queue();
             //####################################
 
-            executeHook(command,endAction,executingUser,server,channel,msg);
+            executeHook(command,endAction,executingUser,server,channel,msg,commandState);
 
 
 
         }
     }
 
-    public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
+    public static List<String> executeValueHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg,CommandState commandState)
     {
         String hookMethod = getHookMethodName(action);
-        List<String> methodGivenArgs = resolveMethodGivenArgs(action, command, executingUser, server, channel,msg);
+        List<String> methodGivenArgs = resolveMethodGivenArgs(action, command, executingUser, server, channel,msg,commandState);
 
 
             Method hookMethodObj = hookMethods.get(hookMethod);
 
             try {
                 if (hookMethodObj.getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
-                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg,commandState, methodGivenArgs);
                 } else if (!hookMethodObj.getAnnotation(HookMethod.class).hidden() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
-                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg,commandState, methodGivenArgs);
                 }
 
             } catch (IllegalAccessException e) {
@@ -79,19 +160,19 @@ public class CommandProcessor {
 
         return null;
     }
-    public static void executeHook(Command command ,String action, User executingUser, Guild server, MessageChannel channel, Message msg)
+    public static void executeHook(Command command , String action, User executingUser, Guild server, MessageChannel channel, Message msg, CommandState commandState)
     {
 
         String hookMethod = getHookMethodName(action);
-        List<String> methodGivenArgs = resolveMethodGivenArgs(action, command, executingUser, server, channel,msg);
+        List<String> methodGivenArgs = resolveMethodGivenArgs(action, command, executingUser, server, channel,msg,commandState);
 
 
 
             try {
                 if (hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand()) {
-                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg,commandState ,methodGivenArgs);
                 } else if (!hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden()) {
-                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg, methodGivenArgs);
+                    hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg,commandState ,methodGivenArgs);
                 }
 
             } catch (IllegalAccessException e) {
@@ -104,7 +185,7 @@ public class CommandProcessor {
     }
 
 
-    private static List<String> resolveMethodGivenArgs(String action, Command command, User executingUser, Guild server, MessageChannel channel, Message msg)
+    private static List<String> resolveMethodGivenArgs(String action, Command command, User executingUser, Guild server, MessageChannel channel, Message msg,CommandState commandState)
     {
         Matcher matchAll = Pattern.compile("^.*?\\((.*?)\\)$").matcher(action);
         List<String> methodGivenArgs = new ArrayList<>();
@@ -124,8 +205,17 @@ public class CommandProcessor {
                         methodGivenArgs.add(m.group(1));
                     }
                 } else {
-                    if (s.matches("^.*?\\(.*\\)"))
-                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg));
+                    if(s.startsWith("?"))
+                    {
+                        methodGivenArgs.add(Boolean.toString(evaluateExpression(s)));
+                    }else
+                        if(s.equalsIgnoreCase("true")||s.equalsIgnoreCase("false"))
+                        {
+                            methodGivenArgs.add(s);
+                        }
+                    if (s.matches("^.*?\\(.*\\)")) {
+                        methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg, commandState));
+                    }
                 }
             }
         }
@@ -163,13 +253,13 @@ public class CommandProcessor {
 
 
     @HookMethod(name = "reply",hidden = false,hasReturnValue = false)
-    public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, Message msg, List<String> methodArgs)
+    public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, Message msg,CommandState commandState, List<String> methodArgs)
     {
         channelSent.sendMessage(String.join("\n",methodArgs)).queue();
     }
 
     @HookMethod(name = "help",hidden = true, hasReturnValue = true)
-    public static List<String> helpCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    public static List<String> helpCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
 
         List<String> lines = new ArrayList<>();
@@ -197,13 +287,13 @@ public class CommandProcessor {
     }
 
     @HookMethod(name = "privateMessage",hidden = false,hasReturnValue = false)
-    public static void pmCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    public static void pmCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
         userSent.openPrivateChannel().queue((channel) -> channel.sendMessage(String.join("\n", methodArgs)).queue());
     }
 
     @HookMethod(name = "reactToCommand", hidden = false, hasReturnValue = false)
-    public static void reactToCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    public static void reactToCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
         if(methodArgs.size() == 1)
         {
@@ -215,7 +305,7 @@ public class CommandProcessor {
     }
 
     @HookMethod(name = "reactToPrevious", hidden = false, hasReturnValue = false)
-    public static void reactToPreviousCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    public static void reactToPreviousCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
         if(methodArgs.size() == 2)
         {
@@ -236,26 +326,28 @@ public class CommandProcessor {
     }
 
     @HookMethod(name = "deleteCommand", hidden = false,hasReturnValue = false)
-    public static void deleteWrittenCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    public static void deleteWrittenCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
         msg.delete().queue();
     }
 
     @HookMethod(name = "purge", hidden = false, hasReturnValue = false)
-    public static void purgeMessagesCommand(MessageChannel channelSent, User userSent, Guild server,Message msg, List<String> methodArgs)
+    public static void purgeMessagesCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
-        if(methodArgs.size()==1) {
+        if(server.getMember(userSent).hasPermission(Permission.MESSAGE_MANAGE)) {
+            if (methodArgs.size() == 1) {
 
-            String msgNum = methodArgs.get(0);
+                String msgNum = methodArgs.get(0);
 
-            if(msgNum.matches("\\d+")) {
+                if (msgNum.matches("\\d+")) {
 
-                MessageHistory history = channelSent.getHistory();
-                history.retrievePast(Integer.parseInt(msgNum)+1).queue((list) -> list.forEach((target) -> {
-                    if(!target.equals(msg)) {
-                        target.delete().queue();
-                    }
-                }));
+                    MessageHistory history = channelSent.getHistory();
+                    history.retrievePast(Integer.parseInt(msgNum) + 1).queue((list) -> list.forEach((target) -> {
+                        if (!target.equals(msg)) {
+                            target.delete().queue();
+                        }
+                    }));
+                }
             }
         }
     }
@@ -280,8 +372,82 @@ public class CommandProcessor {
             target.addReaction(emote).queue();
         }
     }
+    @HookMethod(name = "assert", hidden = false, hasReturnValue = false)
+    public static void evaluateConditionCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
+    {
+        boolean tmp = true;
+        for (String methodArg : methodArgs) {
+            if(methodArg.equalsIgnoreCase("false"))
+            {
+                tmp=false;
+            }else if(!methodArg.equalsIgnoreCase("true"))
+            {
+                throw new IllegalArgumentException("given Values weren't boolean");
+            }
+            if(!tmp) break;
+        }
+        int conditionAmount = commandState.getConditionStates().size();
+        if(tmp)
+        {
+            commandState.getConditionStates().add(true);
+        }
+        else
+        {
+            commandState.getConditionStates().add(false);
+        }
+    }
+
+    @HookMethod(name = "isCondition",hidden = false,hasReturnValue = true)
+    public static List<String> isConditionCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
+    {
+        List<String> value = new ArrayList<>();
+        if(methodArgs.size()==1)
+        {
+
+            String expr = methodArgs.get(0);
+            if(expr.startsWith("?")) {
+                Expression exp = new Expression(expr.replace("?", ""));
+                if (exp.isBoolean()) {
+                    value.add("true");
+                }
+                else
+                {
+                    value.add("false");
+                }
+            }else
+            {
+                value.add("false");
+            }
+        }
+        return value;
+    }
 
 
+
+    private static boolean evaluateExpression(String expr)
+    {
+        if(expr.startsWith("?"))
+        {
+            Expression exp = new Expression(expr.replace("?",""));
+            if(!exp.isBoolean())
+            {
+                throw new RuntimeException("the given Value: "+ expr + " was not an evaluation");
+            }
+            BigDecimal res = exp.eval();
+
+            if(res.intValue()==0)
+            {
+                return false;
+            }else
+            {
+                return true;
+            }
+        }
+        else
+        {
+            throw new RuntimeException("the given Value: "+ expr + " was not an evaluation because it didn't start with a ?");
+        }
+    }
 
 
 
