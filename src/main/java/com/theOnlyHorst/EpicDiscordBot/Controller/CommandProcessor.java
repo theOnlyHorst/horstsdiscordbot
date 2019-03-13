@@ -177,7 +177,7 @@ public class CommandProcessor {
 
             Command comToHelp = FileReader.getCommand(methodArgs.get(0), server.getId());
             lines.add("Command: " + comToHelp.getName());
-            lines.add("Usage: " + CommandParser.defaultPrefix + comToHelp.getName() + " " + String.join(" ", comToHelp.getArgumentNames()));
+            lines.add("Usage: " + CommandParser.getServerPrefix(server.getIdLong()) + comToHelp.getName() + " " + String.join(" ", comToHelp.getArgumentNames()));
             lines.add(comToHelp.getDescription());
 
         }
@@ -187,7 +187,7 @@ public class CommandProcessor {
             lines.addAll(FileReader.getCommandsForServer(server.getId()));
             lines.add("");
             lines.add("Default commands: ");
-            lines.addAll(FileReader.getDefaultCommands());
+            lines.addAll(FileReader.getDefaultCommands(server.getId()));
             lines.add("");
             lines.add("For info about a command type: !help <command>");
         }
