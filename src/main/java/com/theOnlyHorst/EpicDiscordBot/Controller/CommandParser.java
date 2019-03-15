@@ -35,7 +35,9 @@ public class CommandParser {
 
 
 
-            CommandProcessor.executeCommand(comToExec,args,userSent,server,channelsent,msg);
+
+            CommandProcessor.executeCommand(comToExec, args, userSent, server, channelsent, msg);
+
 
         }
 

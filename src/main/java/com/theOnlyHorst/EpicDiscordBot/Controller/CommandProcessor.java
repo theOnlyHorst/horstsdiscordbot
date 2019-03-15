@@ -7,6 +7,7 @@ import com.udojava.evalex.Expression;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 
+import javax.naming.CommunicationException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,61 +34,48 @@ public class CommandProcessor {
         {
             args.add("");
         }
-        for (String c : command.getActions())
-        {
-            String endAction = c;
-            if(c.contains("$"))
-            {
+        for (String c : command.getActions()) {
 
 
-                for (String a : command.getArgumentNames())
-                {
-                    if(c.contains("$"+a))
-                    {
-                        endAction = endAction.replace("$"+a, args.get(command.getArgumentNames().indexOf(a)));
+
+                String endAction = c;
+                if (c.contains("$")) {
+
+
+                    for (String a : command.getArgumentNames()) {
+                        if (c.contains("$" + a)) {
+                            endAction = endAction.replace("$" + a, args.get(command.getArgumentNames().indexOf(a)));
+                        }
                     }
-                }
 
-            }
-            boolean finishLoop = true;
-            for(boolean condstate : commandState.getConditionStates())
-            {
-                if(endAction.startsWith(":"))
-                {
-                    if(condstate)
-                    endAction = endAction.replaceFirst(":","");
-                    else
+                }
+                boolean finishLoop = true;
+                for (boolean condstate : commandState.getConditionStates()) {
+                    if (endAction.startsWith(":")) {
+                        if (condstate)
+                            endAction = endAction.replaceFirst(":", "");
+                        else
+                            finishLoop = false;
+
+                    } else if (endAction.startsWith("!")) {
+                        if (!condstate) {
+                            endAction = endAction.replaceFirst("!", "");
+                        } else
+                            finishLoop = false;
+                    } else if (endAction.equals("endAssert")) {
+                        if (commandState.getConditionStates().size() > 0) {
+                            commandState.getConditionStates().remove(commandState.getConditionStates().size() - 1);
+                        }
                         finishLoop = false;
-
-                }
-                else if(endAction.startsWith("!"))
-                {
-                    if(!condstate)
-                    {
-                        endAction = endAction.replaceFirst("!","");
+                        break;
+                    } else {
+                        throw new CommandParsingException("action is missing an on false or on true prefix");
                     }
-                    else
-                        finishLoop = false;
-                }else
-                if(endAction.equals("endAssert"))
-                {
-                    if(commandState.getConditionStates().size()>0)
-                    {
-                        commandState.getConditionStates().remove(commandState.getConditionStates().size()-1);
-                    }
-                    finishLoop = false;
-                    break;
                 }
-                else
-                {
-                    throw new RuntimeException("action is missing an on false or on true prefix");
-                }
-            }
 
-            if(!finishLoop)
-            {
-                continue;
-            }
+                if (!finishLoop) {
+                    continue;
+                }
             /*if(c.startsWith(":"))
             {
                 if(commandState.getConditionStates().size()>0) {
@@ -119,18 +107,22 @@ public class CommandProcessor {
                 }
             }
             else*/
-            if(!c.matches("[!:].+?"))
-            {
-                if(commandState.getConditionStates().size()>0) {
-                    throw new RuntimeException("Can't have non on true or on false value while in an assert state");
+                if (!c.matches("[!:].+?")) {
+                    if (commandState.getConditionStates().size() > 0) {
+                        throw new CommandParsingException("Can't have non on true or on false value while in an assert state");
+                    }
                 }
+
+                //DEBUG
+                //channel.sendMessage(endAction).queue();
+                //####################################
+
+            try {
+                executeHook(command, endAction, executingUser, server, channel, msg, commandState);
+            }catch (CommandParsingException ex)
+            {
+                throw new RuntimeException("Command Parsing Error at Line: "+command.getActions().indexOf(c)+ " " + c,ex);
             }
-
-            //DEBUG
-            //channel.sendMessage(endAction).queue();
-            //####################################
-
-            executeHook(command,endAction,executingUser,server,channel,msg,commandState);
 
 
 
@@ -146,19 +138,26 @@ public class CommandProcessor {
             Method hookMethodObj = hookMethods.get(hookMethod);
 
             try {
-                if (hookMethodObj.getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
-                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg,commandState, methodGivenArgs);
-                } else if (!hookMethodObj.getAnnotation(HookMethod.class).hidden() && hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue()) {
-                    return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg,commandState, methodGivenArgs);
+                if(hookMethodObj.getAnnotation(HookMethod.class).hasReturnValue())
+                {
+                    if (hookMethodObj.getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand()) {
+                        return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, commandState, methodGivenArgs);
+                    } else if (!hookMethodObj.getAnnotation(HookMethod.class).hidden()) {
+                        return (List<String>) hookMethodObj.invoke(null, channel, executingUser, server, msg, commandState, methodGivenArgs);
+                    }
+                }
+                else
+                {
+                    throw new CommandParsingException("Recursively called Hook Method does not have a return value");
                 }
 
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             } catch (InvocationTargetException e) {
-                e.printStackTrace();
+                throw new CommandParsingException("Hook Method Exception: "+ e.getTargetException().getMessage());
             }
 
-        return null;
+        throw new CommandParsingException("Given Hook Method does not exist");
     }
     public static void executeHook(Command command , String action, User executingUser, Guild server, MessageChannel channel, Message msg, CommandState commandState)
     {
@@ -171,16 +170,18 @@ public class CommandProcessor {
             try {
                 if (hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden() && command.isDefaultCommand()) {
                     hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg,commandState ,methodGivenArgs);
+                    return;
                 } else if (!hookMethods.get(hookMethod).getAnnotation(HookMethod.class).hidden()) {
                     hookMethods.get(hookMethod).invoke(null, channel, executingUser, server, msg,commandState ,methodGivenArgs);
+                    return;
                 }
 
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             } catch (InvocationTargetException e) {
-                e.getCause().printStackTrace();
-                //e.printStackTrace();
+                throw new CommandParsingException(e.getTargetException().getMessage());
             }
+            throw new CommandParsingException("Given Hook Method does not exist");
 
     }
 
@@ -382,7 +383,7 @@ public class CommandProcessor {
                 tmp=false;
             }else if(!methodArg.equalsIgnoreCase("true"))
             {
-                throw new IllegalArgumentException("given Values weren't boolean");
+                throw new CommandParsingException("given Values weren't boolean");
             }
             if(!tmp) break;
         }
@@ -431,7 +432,7 @@ public class CommandProcessor {
             Expression exp = new Expression(expr.replace("?",""));
             if(!exp.isBoolean())
             {
-                throw new RuntimeException("the given Value: "+ expr + " was not an evaluation");
+                throw new CommandParsingException("the given Value: "+ expr + " was not an evaluation");
             }
             BigDecimal res = exp.eval();
 
@@ -445,7 +446,7 @@ public class CommandProcessor {
         }
         else
         {
-            throw new RuntimeException("the given Value: "+ expr + " was not an evaluation because it didn't start with a ?");
+            throw new CommandParsingException("the given Value: "+ expr + " was not an evaluation because it didn't start with a ?");
         }
     }
 
