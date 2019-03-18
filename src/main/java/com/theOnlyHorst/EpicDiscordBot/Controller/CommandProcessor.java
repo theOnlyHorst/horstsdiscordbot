@@ -450,6 +450,14 @@ public class CommandProcessor {
         }
     }
 
+    @HookMethod(name = "joinVoice", hidden = false , hasReturnValue = false)
+    public static void joinVoiceChannel(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
+    {
+
+    }
+
+
+
 
 
 }
