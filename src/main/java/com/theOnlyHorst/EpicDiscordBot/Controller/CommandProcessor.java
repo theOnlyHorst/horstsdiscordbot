@@ -1,13 +1,12 @@
 package com.theOnlyHorst.EpicDiscordBot.Controller;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
 import com.theOnlyHorst.EpicDiscordBot.Model.CommandState;
 import com.udojava.evalex.Expression;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 
-import javax.naming.CommunicationException;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -202,19 +201,25 @@ public class CommandProcessor {
                 s = s.trim();
                 if (s.startsWith("'")) {
                     Matcher m = Pattern.compile("'(.*?)'").matcher(s);
+
                     if (m.find()) {
                         methodGivenArgs.add(m.group(1));
                     }
                 } else {
+                    Matcher m2 = Pattern.compile("#res:(.*?)#").matcher(s);
                     if(s.startsWith("?"))
                     {
                         methodGivenArgs.add(Boolean.toString(evaluateExpression(s)));
-                    }else
-                        if(s.equalsIgnoreCase("true")||s.equalsIgnoreCase("false"))
-                        {
-                            methodGivenArgs.add(s);
-                        }
-                    if (s.matches("^.*?\\(.*\\)")) {
+                    }else if(s.equalsIgnoreCase("true")||s.equalsIgnoreCase("false"))
+                    {
+                        methodGivenArgs.add(s);
+                    }else if (m2.matches())
+                    {
+                        File f = FileReader.getResourceFile(server.getId(),m2.group(1));
+                        commandState.getResourceFiles().add(f);
+                        methodGivenArgs.add(m2.replaceFirst("#"+commandState.getResourceFiles().indexOf(f)+"#"));
+                    }
+                    else if (s.matches("^.*?\\(.*\\)")) {
                         methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg, commandState));
                     }
                 }
@@ -256,7 +261,28 @@ public class CommandProcessor {
     @HookMethod(name = "reply",hidden = false,hasReturnValue = false)
     public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, Message msg,CommandState commandState, List<String> methodArgs)
     {
+        File attachment = null;
+        Pattern p = Pattern.compile("#(\\d+)#");
+        for(String s:methodArgs)
+        {
+            Matcher m = p.matcher(s);
+            if(m.matches())
+            {
+                attachment = commandState.getResourceFiles().get(Integer.parseInt(m.group(1)));
+                methodArgs.remove(s);
+                break;
+            }
+        }
+        if(attachment==null)
         channelSent.sendMessage(String.join("\n",methodArgs)).queue();
+        else
+        {
+            if(methodArgs.size()==0)
+            {
+                channelSent.sendFile(attachment).queue();
+            }else
+            channelSent.sendFile(attachment,String.join("\n",methodArgs)).queue();
+        }
     }
 
     @HookMethod(name = "help",hidden = true, hasReturnValue = true)
@@ -290,7 +316,28 @@ public class CommandProcessor {
     @HookMethod(name = "privateMessage",hidden = false,hasReturnValue = false)
     public static void pmCommand(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
+        File attachment=null;
+        Pattern p = Pattern.compile("#(\\d+)#");
+        for(String s:methodArgs)
+        {
+            Matcher m = p.matcher(s);
+            if(m.matches())
+            {
+                attachment = commandState.getResourceFiles().get(Integer.parseInt(m.group(1)));
+                methodArgs.remove(s);
+                break;
+            }
+        }
+        if(attachment==null)
         userSent.openPrivateChannel().queue((channel) -> channel.sendMessage(String.join("\n", methodArgs)).queue());
+        else
+        {
+            File finalAttachment = attachment;
+            if(methodArgs.size()==0)
+            userSent.openPrivateChannel().queue((channel) -> channel.sendFile(finalAttachment).queue());
+            else
+                userSent.openPrivateChannel().queue((channel) -> channel.sendFile(finalAttachment,String.join("\n", methodArgs)).queue());
+        }
     }
 
     @HookMethod(name = "reactToCommand", hidden = false, hasReturnValue = false)
@@ -455,6 +502,7 @@ public class CommandProcessor {
     {
 
     }
+
 
 
 

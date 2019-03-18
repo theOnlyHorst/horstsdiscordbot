@@ -15,7 +15,7 @@ public class FileReader {
     public static List<String> getCommandsForServer(String serverId)
     {
         List<String> returnVal = new ArrayList<>();
-        File serverCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/"+serverId);
+        File serverCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/commands/"+serverId);
         List<File> filesserver = Arrays.asList(serverCommandDir.listFiles());
         for (File f : filesserver)
         {
@@ -28,7 +28,7 @@ public class FileReader {
     public static List<String> getDefaultCommands(String serverId)
     {
         List<String> returnVal = new ArrayList<>();
-        File defaultCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/default");
+        File defaultCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/commands/default");
         List<File> filesdefault = Arrays.asList(defaultCommandDir.listFiles());
         for (File f : filesdefault)
         {
@@ -40,7 +40,7 @@ public class FileReader {
     private static File findCommandFile(String command, String serverId)
     {
 
-        File serverCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/"+serverId);
+        File serverCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/commands/"+serverId);
         File resultFile =null;
         if(!serverCommandDir.exists())
         {
@@ -60,7 +60,7 @@ public class FileReader {
                 }
             }
         }
-        File defaultCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/default");
+        File defaultCommandDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/commands/default");
         if(resultFile==null)
         {
             List<File> files = Arrays.asList(defaultCommandDir.listFiles());
@@ -83,6 +83,11 @@ public class FileReader {
         Gson gson = new Gson();
         Command ret=null;
 
+        if(resultFile==null)
+        {
+            return null;
+        }
+
         try ( FileInputStream fis = new FileInputStream(resultFile)){
             ret = gson.fromJson(new InputStreamReader(fis), new TypeToken<Command>(){}.getType());
         } catch (FileNotFoundException e) {
@@ -91,5 +96,23 @@ public class FileReader {
             e.printStackTrace();
         }
         return ret;
+    }
+
+    public static File getResourceFile(String serverId,String fileName)
+    {
+        File serverResDir = new File(EpicDiscordBot.dataDirectory.getPath()+"/resources/"+serverId);
+
+        if(!serverResDir.exists())
+            serverResDir.mkdir();
+
+        List<File> files = Arrays.asList(serverResDir.listFiles());
+        for(File f:files)
+        {
+            if(f.getName().equals(fileName))
+            {
+                return f;
+            }
+        }
+        return null;
     }
 }

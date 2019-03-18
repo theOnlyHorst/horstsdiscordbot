@@ -33,6 +33,8 @@ public class CommandParser {
 
             Command comToExec = FileReader.getCommand(command,server.getId());
 
+            if(comToExec==null)
+                return;
 
 
 

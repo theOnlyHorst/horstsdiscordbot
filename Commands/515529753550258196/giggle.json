@@ -1,0 +1,12 @@
+{
+  "id" : 10,
+  "creatorId" : 169827037178101760,
+  "defaultCommand" : false,
+  "name" : "giggle",
+  "description" : "funny face lol",
+  "argumentNames" : [
+  ],
+  "actions" : [
+    "reply(#res:JoeGiggle.png#)"
+  ]
+}

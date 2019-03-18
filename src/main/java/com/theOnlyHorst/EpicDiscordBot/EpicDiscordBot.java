@@ -28,7 +28,7 @@ public class EpicDiscordBot extends ListenerAdapter {
 
 
         try {
-            dataDirectory = new File(new File(EpicDiscordBot.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile().getParentFile().getParentFile().getPath()+"/data/commands");
+            dataDirectory = new File(new File(EpicDiscordBot.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile().getParentFile().getParentFile().getPath()+"/data");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -44,7 +44,7 @@ public class EpicDiscordBot extends ListenerAdapter {
 
         botHome = jda.getGuildById(515529753550258196L);
 
-        Runnable consthread = () -> CommandLineParser.startUpConsole();
+        Runnable consthread = CommandLineParser::startUpConsole;
 
         consthread.run();
 
