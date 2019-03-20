@@ -206,7 +206,7 @@ public class CommandProcessor {
                         methodGivenArgs.add(m.group(1));
                     }
                 } else {
-                    Matcher m2 = Pattern.compile("#res:(.*?)#").matcher(s);
+                    Matcher m2 = Pattern.compile("#(.*?):(.*?)#").matcher(s);
                     if(s.startsWith("?"))
                     {
                         methodGivenArgs.add(Boolean.toString(evaluateExpression(s)));
@@ -215,9 +215,44 @@ public class CommandProcessor {
                         methodGivenArgs.add(s);
                     }else if (m2.matches())
                     {
-                        File f = FileReader.getResourceFile(server.getId(),m2.group(1));
-                        commandState.getResourceFiles().add(f);
-                        methodGivenArgs.add(m2.replaceFirst("#"+commandState.getResourceFiles().indexOf(f)+"#"));
+                        String resourceType =m2.group(1);
+                        String fileName = m2.group(2);
+                        File f = FileReader.getResourceFile(server.getId(), fileName);
+                        if(commandState.getLoadedResources().getOrDefault(fileName,CommandState.ResourceLoadState.NONE)==CommandState.ResourceLoadState.NONE)
+                        {
+                            commandState.getResourceFiles().add(f);
+                            commandState.getLoadedResources().put(fileName,CommandState.ResourceLoadState.FILE);
+                        }
+
+                        if(resourceType.equals("res")) {
+
+                            methodGivenArgs.add(m2.replaceFirst("#resId:" + commandState.getResourceFiles().indexOf(f) + "#"));
+                            //commandState.getLoadedResources().put(m2.group(2),CommandState.ResourceLoadState.FILE);
+                        }
+                        else if(resourceType.equals("strings"))
+                        {
+                            List<String> ls;
+                            if(commandState.getLoadedResources().get(fileName)==CommandState.ResourceLoadState.STRINGS)
+                            {
+                                ls=commandState.getStringLists().get(fileName);
+                            }
+                            else
+                            {
+                                ls = FileReader.getStringListResource(f);
+                                if(ls==null)
+                                {
+                                    throw new RuntimeException("Illegal State, there is no string List found even though there should be one");
+                                }
+                                commandState.getStringLists().put(fileName,ls);
+                                commandState.getLoadedResources().put(fileName, CommandState.ResourceLoadState.STRINGS);
+                            }
+
+
+                        }else if (resourceType.equals("sound"))
+                        {
+
+                        }
+
                     }
                     else if (s.matches("^.*?\\(.*\\)")) {
                         methodGivenArgs.addAll(executeValueHook(command, s, executingUser, server, channel, msg, commandState));
@@ -262,7 +297,7 @@ public class CommandProcessor {
     public static void replyCommand(MessageChannel channelSent, User userSent, Guild server, Message msg,CommandState commandState, List<String> methodArgs)
     {
         File attachment = null;
-        Pattern p = Pattern.compile("#(\\d+)#");
+        Pattern p = Pattern.compile("#resId:(\\d+)#");
         for(String s:methodArgs)
         {
             Matcher m = p.matcher(s);

@@ -6,6 +6,7 @@ import com.theOnlyHorst.EpicDiscordBot.EpicDiscordBot;
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -114,5 +115,21 @@ public class FileReader {
             }
         }
         return null;
+    }
+    public static List<String> getStringListResource(File resFile)
+    {
+        List<String> resultList = null;
+        if(resFile==null)
+            return null;
+
+        try(FileInputStream fis = new FileInputStream(resFile)) {
+            Gson gson = new Gson();
+             resultList = gson.fromJson(new InputStreamReader(fis,StandardCharsets.UTF_8),new TypeToken<List<String>>(){}.getType());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return resultList;
     }
 }

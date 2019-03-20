@@ -1,16 +1,20 @@
 package com.theOnlyHorst.EpicDiscordBot.Model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
+import javax.persistence.Entity;
 import java.util.List;
 
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class Server {
+@EqualsAndHashCode(callSuper = true)
+@ToString
+@Entity
+public class Server extends AbstractPersistable {
 
-    private Long id;
+
+    private Long discordId;
     @Setter
     private String name;
     @Setter
