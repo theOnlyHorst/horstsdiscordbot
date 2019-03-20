@@ -11,10 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -246,6 +243,7 @@ public class CommandProcessor {
                                 commandState.getStringLists().put(fileName,ls);
                                 commandState.getLoadedResources().put(fileName, CommandState.ResourceLoadState.STRINGS);
                             }
+                            methodGivenArgs.add(s);
 
 
                         }else if (resourceType.equals("sound"))
@@ -536,6 +534,24 @@ public class CommandProcessor {
     public static void joinVoiceChannel(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
     {
 
+    }
+
+    @HookMethod(name = "getRandomString", hidden = false,hasReturnValue = true)
+    public static List<String> getRandomStringFromResource(MessageChannel channelSent, User userSent, Guild server,Message msg,CommandState commandState, List<String> methodArgs)
+    {
+        Random rng = new Random();
+        List<String> returns = new ArrayList<>();
+
+        Matcher m = Pattern.compile("#strings:(.*?)#").matcher(methodArgs.get(0));
+        if(m.matches())
+        {
+            String name = m.group(1);
+            List<String>allstrings = commandState.getStringLists().get(name);
+            returns.add(allstrings.get(rng.nextInt(allstrings.size())));
+        }
+
+
+        return returns;
     }
 
 

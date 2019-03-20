@@ -1,0 +1,12 @@
+{
+  "id" : 11,
+  "creatorId" : 169827037178101760,
+  "defaultCommand" : false,
+  "name" : "lolRandom",
+  "description" : "dis get Random quote",
+  "argumentNames" : [
+  ],
+  "actions" : [
+    "reply(getRandomString(#strings:randomshit.json#))"
+  ]
+}
