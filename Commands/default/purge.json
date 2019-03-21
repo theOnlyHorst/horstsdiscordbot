@@ -8,7 +8,10 @@
     "amount"
   ],
   "actions" : [
-    "purge('$amount')",
-    "reply('I should have purged $amount messages')"
+    "assert(checkPermission('delete'))",
+    ":purge('$amount')",
+    ":reply('I should have purged $amount messages')",
+    "!reply('You do not have the permission to do that')",
+    "endAssert"
   ]
 }

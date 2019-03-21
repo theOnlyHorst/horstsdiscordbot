@@ -58,9 +58,10 @@ public class EpicDiscordBot extends ListenerAdapter {
         //event.getAuthor().openPrivateChannel().queue((channel)-> channel.sendMessage("test").queue());
         String content = message.getContentRaw();
         Guild server = event.getGuild();
-        MessageChannel ch = event.getChannel();
+        TextChannel ch = event.getTextChannel();
         User u = event.getAuthor();
-        CommandParser.parseCommand(server,content,ch,u,message);
+        Member mem = event.getMember();
+        CommandParser.parseCommand(server,content,ch,u,mem,message);
 
 
 

@@ -1,10 +1,7 @@
 package com.theOnlyHorst.EpicDiscordBot.Controller;
 
 import com.theOnlyHorst.EpicDiscordBot.Model.Command;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.entities.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +12,7 @@ public class CommandParser {
     private static final String defaultPrefix = "::";
 
 
-    public static void parseCommand(Guild server, String content, MessageChannel channelsent, User userSent, Message msg)
+    public static void parseCommand(Guild server, String content, TextChannel channelsent, User userSent, Member mem, Message msg)
     {
 
         //else
@@ -38,7 +35,7 @@ public class CommandParser {
 
 
 
-            CommandProcessor.executeCommand(comToExec, args, userSent, server, channelsent, msg);
+            CommandProcessor.executeCommand(comToExec, args, userSent, server, channelsent,mem, msg);
 
 
         }
