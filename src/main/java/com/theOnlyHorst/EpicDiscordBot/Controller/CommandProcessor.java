@@ -37,10 +37,23 @@ public class CommandProcessor {
                 String endAction = c;
                 if (c.contains("$")) {
 
-
+                    Pattern pArrayArg = Pattern.compile("(.+?)\\.\\.\\.");
                     for (String a : command.getArgumentNames()) {
+                        Matcher mMultiple = pArrayArg.matcher(a);
+                        if(mMultiple.matches()&&command.getArgumentNames().indexOf(a)==command.getArgumentNames().size()-1)
+                        {
+                            if(c.contains("$"+mMultiple.group(1)))
+                            {
+                                List<String> allArgs = args.subList(command.getArgumentNames().indexOf(a),args.size());
+
+                                endAction = endAction.replace("$"+mMultiple.group(1),String.join(" ",allArgs));
+                            }
+                        }
+                        else
                         if (c.contains("$" + a)) {
+
                             endAction = endAction.replace("$" + a, args.get(command.getArgumentNames().indexOf(a)));
+
                         }
                     }
 

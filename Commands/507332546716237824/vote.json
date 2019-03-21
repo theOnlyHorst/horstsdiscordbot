@@ -1,0 +1,15 @@
+{
+  "id" : 12,
+  "creatorId" : 169827037178101760,
+  "defaultCommand" : false,
+  "name" : "vote",
+  "description" : "creates a vote message and reacts with up and downvote",
+  "argumentNames" : [
+    "voteText..."
+  ],
+  "actions" : [
+    "reply('A new Vote has been started', 'Vote now for: ', '$voteText')",
+    "reactToPrevious('<:updoot:510486786359689217>','1')",
+    "reactToPrevious('<:downdoot:510486837572403220>','1')"
+  ]
+}

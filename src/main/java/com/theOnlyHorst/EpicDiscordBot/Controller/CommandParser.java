@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class CommandParser {
 
 
-    private static final String defaultPrefix = "!";
+    private static final String defaultPrefix = "::";
 
 
     public static void parseCommand(Guild server, String content, MessageChannel channelsent, User userSent, Message msg)

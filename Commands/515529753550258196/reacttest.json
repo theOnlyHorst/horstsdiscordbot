@@ -1,7 +1,7 @@
 {
   "id" : 4,
   "creatorId" : 169827037178101760,
-  "defaultCommand" : true,
+  "defaultCommand" : false,
   "name" : "reacttest",
   "description" : "This is a Test command to plan and implement basic functions of the interpreter",
   "argumentNames" : [
