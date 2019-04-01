@@ -1,5 +1,7 @@
 package com.theOnlyHorst.EpicDiscordBot;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandLineParser;
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandParser;
 import com.theOnlyHorst.EpicDiscordBot.Controller.CommandProcessor;
@@ -15,7 +17,10 @@ import net.dv8tion.jda.core.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
+import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
+import java.util.List;
 
 public class EpicDiscordBot extends ListenerAdapter {
 
@@ -24,8 +29,19 @@ public class EpicDiscordBot extends ListenerAdapter {
     public static JDA jda;
     public static Guild botHome;
 
+
+
+    public static String apiKey;
+
     public static void main(String[] args) throws LoginException, RateLimitedException {
 
+        Gson gson = new Gson();
+        List<String> botSecrets;
+
+        botSecrets = gson.fromJson(new InputStreamReader(EpicDiscordBot.class.getClassLoader().getResourceAsStream("secrets.json")),new TypeToken<List<String>>(){}.getType());
+
+        apiKey = botSecrets.get(0);
+        //apiKey = EpicDiscordBot.class.getClassLoader().getResource("secrets.json");
 
         try {
             dataDirectory = new File(new File(EpicDiscordBot.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile().getParentFile().getParentFile().getPath()+"/data");
@@ -40,7 +56,7 @@ public class EpicDiscordBot extends ListenerAdapter {
         CommandProcessor.loadHookMethods();
 
 
-        jda = new JDABuilder(AccountType.BOT).setToken("NTE1NTI3NTg3MTE2NjEzNjQz.DtmaZw.-50l870oJQjlvdYHCDoC7RzbLMA").addEventListener(new EpicDiscordBot()).build();
+        jda = new JDABuilder(AccountType.BOT).setToken(apiKey).addEventListener(new EpicDiscordBot()).build();
 
         botHome = jda.getGuildById(515529753550258196L);
 
