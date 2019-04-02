@@ -17,6 +17,7 @@ def lombokVersion = '1.18.6'
 def hibernateVersion = '5.4.1.Final'
 def jUnitVersion = '4.12'
 def lavaplayerVersion = '1.3.11'
+def gsonVersion = '2.8.5'
 
 repositories {
     mavenCentral()
@@ -33,7 +34,7 @@ dependencies {
     compileOnly "org.projectlombok:lombok:$lombokVersion"
     annotationProcessor "org.projectlombok:lombok:$lombokVersion"
     compile "org.hibernate:hibernate-core:$hibernateVersion"
-    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation "com.google.code.gson:gson:$gsonVersion"
     compile 'com.udojava:EvalEx:2.1'
     compile "com.sedmelluq:lavaplayer:$lavaplayerVersion"
 }
