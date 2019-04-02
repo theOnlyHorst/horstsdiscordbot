@@ -90,3 +90,6 @@ atlassian-ide-plugin.xml
 
 # oh-my-zsh gradle plugin
 .gradletasknamecache
+
+# the Secrets Json
+/src/main/resources/secrets.json
