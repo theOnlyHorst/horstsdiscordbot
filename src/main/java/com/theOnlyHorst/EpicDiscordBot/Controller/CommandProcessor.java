@@ -538,13 +538,16 @@ public class CommandProcessor {
 
             String expr = methodArgs.get(0);
             if(expr.startsWith("?")) {
-                Expression exp = new Expression(expr.replace("?", ""));
-                if (exp.isBoolean()) {
-                    value.add("true");
-                }
-                else
+                if(expr.equals("?"))
                 {
                     value.add("false");
+                }else {
+                    Expression exp = new Expression(expr.replace("?", ""));
+                    if (exp.isBoolean()) {
+                        value.add("true");
+                    } else {
+                        value.add("false");
+                    }
                 }
             }else
             {
@@ -560,6 +563,10 @@ public class CommandProcessor {
     {
         if(expr.startsWith("?"))
         {
+            if(expr.equals("?"))
+            {
+                throw new CommandParsingException("the given Value: "+ expr + " was not an evaluation");
+            }
             Expression exp = new Expression(expr.replace("?",""));
             if(!exp.isBoolean())
             {
